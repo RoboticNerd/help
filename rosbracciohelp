@@ -1,0 +1,95 @@
+#if (ARDUINO >= 100)                                // wonder what this is for..
+ #include <Arduino.h>
+#else
+ #include <WProgram.h>
+#endif
+
+#include <Servo.h> 
+#include <Braccio.h>
+#include <ros.h>
+#include <std_msgs/UInt16.h>
+
+ros::NodeHandle  nh;
+
+Servo base;                                         // these are needed initializations for the Bracio arm
+Servo shoulder;
+Servo elbow;
+Servo wrist_rot;
+Servo wrist_ver;
+Servo gripper;
+
+int jointArray[6] = { 20, 30, 180, 170, 0, 73};     // global array since I can't figure out return yet
+
+void armwrite_cb(){                                 // just writing the joint positions to the real arm
+  
+  Braccio.ServoMovement(20, jointArray[0],  jointArray[1], jointArray[2], jointArray[3], jointArray[4],  jointArray[5]); 
+}
+
+void base_cb( const std_msgs::UInt16& cmd_msg ){    // here are 6 different callbacks because I can't pass a vector yet.
+  
+  jointArray[0] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+void shoulder_cb( const std_msgs::UInt16& cmd_msg ){
+  
+  jointArray[1] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+void elbow_cb( const std_msgs::UInt16& cmd_msg ){
+  
+  jointArray[2] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+void wrist_rot_cb( const std_msgs::UInt16& cmd_msg ){
+  
+  jointArray[3] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+void wrist_ver_cb( const std_msgs::UInt16& cmd_msg ){
+  
+  jointArray[4] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+void gripper_cb( const std_msgs::UInt16& cmd_msg ){
+  
+  jointArray[5] = cmd_msg.data;
+  armwrite_cb();
+
+}
+
+ros::Subscriber<std_msgs::UInt16> sub1("base", base_cb);          // 6 subs. why are subs# different than the sub names? no idea.
+ros::Subscriber<std_msgs::UInt16> sub2("shoulder", shoulder_cb);
+ros::Subscriber<std_msgs::UInt16> sub3("elbow", elbow_cb);
+ros::Subscriber<std_msgs::UInt16> sub4("wrist_rot", wrist_rot_cb);
+ros::Subscriber<std_msgs::UInt16> sub5("wrist_ver", wrist_ver_cb);
+ros::Subscriber<std_msgs::UInt16> sub6("gripper", gripper_cb);
+
+
+void setup()
+{
+  Braccio.begin();
+  nh.initNode();              // So cool to fake a node... Thanks ros people.
+  nh.subscribe(sub1);         // I guessed if you have 6 subs you need 6 of these lines.. Think I'm right..
+  nh.subscribe(sub2);
+  nh.subscribe(sub3);
+  nh.subscribe(sub4);
+  nh.subscribe(sub5);
+  nh.subscribe(sub6);
+  
+}
+
+void loop()
+{
+  nh.spinOnce();              // I really thought all the action was supposed to go here.. But didn't find a reason to.
+  delay(1);
+}
